@@ -1,0 +1,43 @@
+// graph_analysis.cypher
+
+// ---
+// Not: Sorgulardaki 'ornek-musteri-id' değerini analiz etmek
+// istediğiniz gerçek bir customer_id ile değiştirin.
+// ---
+
+// İstek: 1. Derece Bağlantılar
+MATCH (c:Customer {customer_id: 'ornek-musteri-id'})-[r:SENT]-(other:Customer)
+RETURN c, r, other;
+
+// İstek: 2. – 4. Derece Bağlantılar
+MATCH path = (c:Customer {customer_id: 'ornek-musteri-id'})-[:SENT*2..4]->(far_contact:Customer)
+WHERE c <> far_contact
+RETURN path;
+
+// İstek: Karşılıklı Transferler
+MATCH (c1:Customer)-[:SENT]->(c2:Customer)
+WHERE (c2)-[:SENT]->(c1)
+RETURN c1, c2;
+
+// İstek: En Çok Gönderenler (Top Senders - İşlem Sayısı)
+MATCH (sender:Customer)-[r:SENT]->()
+RETURN sender.customer_id AS sender_id, count(r) AS sent_count
+ORDER BY sent_count DESC
+LIMIT 10;
+
+// İstek: En Çok Alanlar (Top Receivers - İşlem Sayısı)
+MATCH (receiver:Customer)<-[r:SENT]-()
+RETURN receiver.customer_id AS receiver_id, count(r) AS received_count
+ORDER BY received_count DESC
+LIMIT 10;
+
+// İstek: En Çok Gönderenler (Top Senders - Toplam Tutar)
+MATCH (sender:Customer)-[r:SENT]->()
+RETURN sender.customer_id AS sender_id, sum(r.amount) AS total_sent_amount
+ORDER BY total_sent_amount DESC
+LIMIT 10;
+
+// İstek: Şüpheli Küme (Suspicious Cluster - 3'lü Döngü)
+MATCH path = (c1:Customer)-[:SENT]->(c2:Customer)-[:SENT]->(c3:Customer)-[:SENT]->(c1)
+WHERE c1 <> c2 AND c2 <> c3 AND c1 <> c3
+RETURN path;
